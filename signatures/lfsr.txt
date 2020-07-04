@@ -1,0 +1,56 @@
+IDENTIFIER Linear feedback shift register
+
+VARIANT A
+TRANSIENT layer0:MULT(OR(OPAQUE<o1>(AND(1,OPAQUE)),OPAQUE),2);
+TRANSIENT layer1:MULT(OR(OPAQUE<o1>(AND(1,OPAQUE)),layer0),2);
+TRANSIENT layer2:MULT(OR(OPAQUE<o1>(AND(1,OPAQUE)),layer1),2);
+layer3:MULT(OR(OPAQUE<o1>(AND(1,OPAQUE)),layer2),2);
+
+VARIANT B
+TRANSIENT layer0:MULT(OR(AND(1,OPAQUE),OPAQUE),2);
+TRANSIENT layer1:MULT(OR(AND(1,OPAQUE),layer0),2);
+TRANSIENT layer2:MULT(OR(AND(1,OPAQUE),layer1),2);
+layer3:MULT(OR(AND(1,OPAQUE),layer2),2);
+
+VARIANT C
+TRANSIENT layer0:OR(AND(1,OPAQUE),OPAQUE<<1);
+TRANSIENT layer1:OR(AND(1,OPAQUE),layer0<<1);
+TRANSIENT layer2:OR(AND(1,OPAQUE),layer1<<1);
+layer3:OR(AND(1,OPAQUE),layer2<<1);
+
+VARIANT D
+TRANSIENT BitMask:OPAQUE;
+TRANSIENT BitShift:OPAQUE;
+TRANSIENT layer0:AND(BitMask,(OPAQUE<<BitShift))+(OPAQUE >> 1);
+TRANSIENT layer1:AND(BitMask,(OPAQUE<<BitShift))+(layer0 >> 1);
+TRANSIENT layer2:AND(BitMask,(OPAQUE<<BitShift))+(layer1 >> 1);
+layer3:AND(BitMask,(OPAQUE<<BitShift))+(layer2 >> 1);
+
+VARIANT E
+TRANSIENT BitMask:OPAQUE;
+TRANSIENT BitShift:OPAQUE;
+TRANSIENT layer0:OR(AND(BitMask,(OPAQUE<<BitShift)),(OPAQUE >> 1));
+TRANSIENT layer1:OR(AND(BitMask,(OPAQUE<<BitShift)),(layer0 >> 1));
+TRANSIENT layer2:OR(AND(BitMask,(OPAQUE<<BitShift)),(layer1 >> 1));
+layer3:OR(AND(BitMask,(OPAQUE<<BitShift)),(layer2 >> 1));
+
+VARIANT F
+StateMask:OPAQUE;
+TRANSIENT layer0:OR(AND(1,OPAQUE),AND(OPAQUE<<1,StateMask));
+TRANSIENT layer1:OR(AND(1,OPAQUE),AND(layer0<<1,StateMask));
+TRANSIENT layer2:OR(AND(1,OPAQUE),AND(layer1<<1,StateMask));
+layer3:OR(AND(1,OPAQUE),AND(layer2<<1,StateMask));
+
+VARIANT G
+TRANSIENT BitShift:OPAQUE;
+TRANSIENT layer0:OR((XOR(AND(1,OPAQUE),OPAQUE)<<BitShift),(OPAQUE >> 1));
+TRANSIENT layer1:OR((XOR(AND(1,OPAQUE),OPAQUE)<<BitShift),(layer0 >> 1));
+TRANSIENT layer2:OR((XOR(AND(1,OPAQUE),OPAQUE)<<BitShift),(layer1 >> 1));
+layer3:OR((XOR(AND(1,OPAQUE),OPAQUE)<<BitShift),(layer2 >> 1));
+
+VARIANT H
+TRANSIENT BitShift:OPAQUE;
+TRANSIENT layer0:XOR((XOR(AND(1,OPAQUE),OPAQUE)<<BitShift),(OPAQUE >> 1));
+TRANSIENT layer1:XOR((XOR(AND(1,OPAQUE),OPAQUE)<<BitShift),(layer0 >> 1));
+TRANSIENT layer2:XOR((XOR(AND(1,OPAQUE),OPAQUE)<<BitShift),(layer1 >> 1));
+layer3:XOR((XOR(AND(1,OPAQUE),OPAQUE)<<BitShift),(layer2 >> 1));

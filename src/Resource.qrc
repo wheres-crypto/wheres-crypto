@@ -1,0 +1,6 @@
+<!DOCTYPE RCC><RCC version="1.0">
+ <qresource>
+     <file>images/function.png</file>
+	 <file>images/wherescrypto.png</file>
+ </qresource>
+</RCC>
