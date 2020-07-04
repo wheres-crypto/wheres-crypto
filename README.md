@@ -11,7 +11,7 @@ In order to build this project, you need
 
 Open a command prompt and navigate to the source directory: `cd c:/path/to/source/directory`
 Then, create an empty directory, and navigate to it: `mkdir build; cd build`
-Point CMake to the IDA SDK directory and Qt directory, and let it generate MSVC project files: `cmake -DIdaSdk_ROOT_DIR=c:/path/to/idasdk -DQtConfig_DIR=c:/path/to/Qt/Qt5.6.3/5.6.3/msvc2015_64`
+Point CMake to the IDA SDK directory and Qt directory, and let it generate MSVC project files: `cmake -DIdaSdk_ROOT_DIR=c:/path/to/idasdk -DQtConfig_DIR=c:/path/to/Qt/Qt5.6.3/5.6.3/msvc2015_64 ..`
 You can now open wherescrypto.vcxproj in Visual Studio, or build it directly from the command line: `MSBuild wherescrypto.vcxproj /p:configuration=release`
 The library is now ready in the `Release` directory.
 
