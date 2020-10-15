@@ -105,7 +105,7 @@ _continue_one:
 	}
 
 	for (itCand = aCandidates.begin(); itCand != aCandidates.end(); itCand++) {
-		DepthFirstSearch(&itCand->second, itCand->first);
+		BreadthFirstSearch(&itCand->second, itCand->first);
 		if ((GetTickCount() - dwStartTime) > dwMaxEvaluationTime) {
 _time_exceeded:
 			wc_debug("[-] max evaluation time exceeded for function %s (%s), signature : Block Permutation\n",
@@ -127,14 +127,14 @@ _time_exceeded:
 						EVALUATION_RESULT_MATCH_FOUND,
 						itTrip->oPath
 					)->toAbstract();
-					wc_debug("[+] found a merkle damgard pattern for %s - %s - %s depth=%d\n",
+					wc_debug("[+] found a Sequential Block Permutation pattern for %s - %s - %s depth=%d\n",
 						itTrip->oNode1->expression(2).c_str(),
 						itTrip->oNode2->expression(2).c_str(),
 						itTrip->oNode3->expression(2).c_str(),
 						itTrip->oPath->dwDepth
 					);
 					DWORD dwEndTime = GetTickCount();
-					wc_debug("[*] time taken to evalutate %s (%.1500s) for Merkle Damgard found=%d: %fs\n",
+					wc_debug("[*] time taken to evalutate %s (%.1500s) for Sequential Block Permutation found=%d: %fs\n",
 						oCodeGraph->toCodeGraph()->szFunctionName.c_str(),
 						oCodeGraph->toCodeGraph()->oStatePredicate->expression(2).c_str(),
 						true,
@@ -153,7 +153,7 @@ _time_exceeded:
 
 _evaluation_error:
 	DWORD dwEndTime = GetTickCount();
-	wc_debug("[*] time taken to evalutate %s (%.1500s) for Merkle Damgard found=%d: %fs\n",
+	wc_debug("[*] time taken to evalutate %s (%.1500s) for Sequential Block Permutation found=%d: %fs\n",
 		oCodeGraph->toCodeGraph()->szFunctionName.c_str(),
 		oCodeGraph->toCodeGraph()->oStatePredicate->expression(2).c_str(),
 		false,
@@ -169,7 +169,7 @@ _evaluation_error:
 	return false;
 }
 
-void BlockPermutationEvaluatorImpl::DepthFirstSearch(std::list<NodeTriplet> *lpOutput, DFGNode oNode1) {
+void BlockPermutationEvaluatorImpl::BreadthFirstSearch(std::list<NodeTriplet> *lpOutput, DFGNode oNode1) {
 	std::list<BFSPath> aQueue;
 	std::list<DFGNode>::iterator it;
 	std::unordered_map<unsigned int, DFGNode>::iterator itOut;

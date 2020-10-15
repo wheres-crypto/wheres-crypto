@@ -49,13 +49,14 @@ inline void OpaqueAssignmentImpl::Unassign(DFGNode oSignatureNode) {
 		}
 	}
 }
-void SignatureEvaluatorImpl::PushFlagged() {
-	aStack.push_back(oFlagged->copy());
+void SignatureEvaluatorImpl::PushMatrix() {
+	aStack.push_back(oMatrix);
+	oMatrix = oMatrix->copy();
 }
 
-void SignatureEvaluatorImpl::PopFlagged() {
+void SignatureEvaluatorImpl::PopMatrix() {
 	if (aStack.begin() != aStack.end()) {
-		oFlagged = aStack.back();
+		oMatrix = aStack.back();
 		aStack.pop_back();
 	}
 }
@@ -67,7 +68,7 @@ void SignatureEvaluatorImpl::ClearFlagged() {
 }
 
 assignment_t SignatureEvaluatorImpl::Pass1Recurse(const DFGNode& oSignatureNode, const DFGNode& oCodeNode) {
-	assignment_t eLookup = GetAssignment(oSignatureNode->dwNodeId, oCodeNode->dwNodeId);
+	assignment_t eLookup = oMatrix->GetAssignment(oSignatureNode->dwNodeId, oCodeNode->dwNodeId);
 	if (eLookup == ASSIGNMENT_UNEXPLORED) {
 		if (IsCandidate(oSignatureNode, oCodeNode)) {
 			std::unordered_map<unsigned int, DFGNode>::const_iterator itE, itC;
@@ -121,10 +122,10 @@ assignment_t SignatureEvaluatorImpl::Pass1Recurse(const DFGNode& oSignatureNode,
 					}
 				}
 			}
-			Assign(oSignatureNode->dwNodeId, oCodeNode->dwNodeId, eResult, true);
+			oMatrix->Assign(oSignatureNode->dwNodeId, oCodeNode->dwNodeId, eResult, true);
 			return eResult;
 		} else {
-			Assign(oSignatureNode->dwNodeId, oCodeNode->dwNodeId, ASSIGNMENT_INVALID, true);
+			oMatrix->Assign(oSignatureNode->dwNodeId, oCodeNode->dwNodeId, ASSIGNMENT_INVALID, true);
 			return ASSIGNMENT_INVALID;
 		}
 	} else {
@@ -140,7 +141,7 @@ bool SignatureEvaluatorImpl::PruneFlagged() {
 		bAgain = false;
 		for (itP = oSignatureGraph->oGraph->begin(); itP != oSignatureGraph->oGraph->end(); itP++) {
 			DFGNode oSignatureNode = itP->second;
-			sparse_matrix_iterator_t itCodeNode = oFlagged->FirstCandidate(oSignatureNode->dwNodeId);
+			sparse_matrix_iterator_t itCodeNode = oMatrix->FirstCandidate(oSignatureNode->dwNodeId);
 
 			/*
 			 * no candiate for this node exists -> bail
@@ -172,7 +173,7 @@ bool SignatureEvaluatorImpl::PruneFlagged() {
 						itOrderEN != oSignatureNode->aInputNodes.end();
 						itOrderEN++, itOrderCN++
 					) {
-						assignment_t eAssignment = GetAssignment((*itOrderEN)->dwNodeId, (*itOrderCN)->dwNodeId);
+						assignment_t eAssignment = oMatrix->GetAssignment((*itOrderEN)->dwNodeId, (*itOrderCN)->dwNodeId);
 						if (eAssignment == ASSIGNMENT_VALID || eAssignment == ASSIGNMENT_UNDEFINED) {
 							continue;
 						}
@@ -180,7 +181,7 @@ bool SignatureEvaluatorImpl::PruneFlagged() {
 					}
 				} else {
 					/* input order agnostic node */
-					if (oSignatureNode->aInputNodes.size() > oCodeNode->aInputNodes.size()) {
+					if (oSignatureNode->aInputNodesUnique.size() > oCodeNode->aInputNodesUnique.size()) {
 						goto _invalid;
 					}
 					for (itEN = oSignatureNode->aInputNodesUnique.begin();
@@ -188,7 +189,7 @@ bool SignatureEvaluatorImpl::PruneFlagged() {
 						itEN++
 					) {
 						for (itCN = oCodeNode->aInputNodesUnique.begin(); itCN != oCodeNode->aInputNodesUnique.end(); itCN++) {
-							assignment_t eAssignment = GetAssignment(itEN->first, itCN->first);
+							assignment_t eAssignment = oMatrix->GetAssignment(itEN->first, itCN->first);
 							if (eAssignment == ASSIGNMENT_VALID || eAssignment == ASSIGNMENT_UNDEFINED) {
 								break;
 							}
@@ -200,14 +201,14 @@ bool SignatureEvaluatorImpl::PruneFlagged() {
 				}
 
 				if (false) { _invalid:
-					Assign(oSignatureNode->dwNodeId, oCodeNode->dwNodeId, ASSIGNMENT_INVALID);
+					oMatrix->Assign(oSignatureNode->dwNodeId, oCodeNode->dwNodeId, ASSIGNMENT_INVALID);
 					bAgain = true;
 					goto _continue;
 				}
 
 				for (itOutEN = oSignatureNode->aOutputNodes.begin(); itOutEN != oSignatureNode->aOutputNodes.end(); itOutEN++) {
 					for (itOutCN = oCodeNode->aOutputNodes.begin(); itOutCN != oCodeNode->aOutputNodes.end(); itOutCN++) {
-						assignment_t eAssignment = GetAssignment(itOutEN->first, itOutCN->first);
+						assignment_t eAssignment = oMatrix->GetAssignment(itOutEN->first, itOutCN->first);
 						if (eAssignment == ASSIGNMENT_VALID || eAssignment == ASSIGNMENT_UNDEFINED) {
 							break;
 						}
@@ -218,7 +219,7 @@ bool SignatureEvaluatorImpl::PruneFlagged() {
 				}
 
 _continue:
-				itCodeNode = oFlagged->NextCandidate(itCodeNode);
+				itCodeNode = oMatrix->NextCandidate(itCodeNode);
 				if ((GetTickCount() - dwStartTime) > dwMaxEvaluationTime) {
 					return false;
 				}
@@ -245,7 +246,7 @@ bool SignatureEvaluatorImpl::Pass2Recurse(
 			 * go through all nodes in the expression
 			 */
 			DFGNode oSignatureNode = itP->second;
-			sparse_matrix_iterator_t itCodeNode = oFlagged->FirstCandidate(oSignatureNode->dwNodeId);
+			sparse_matrix_iterator_t itCodeNode = oMatrix->FirstCandidate(oSignatureNode->dwNodeId);
 			if (itCodeNode.dwCodeNodeId == 0xffffffff) {
 				return false;
 			}
@@ -272,7 +273,7 @@ bool SignatureEvaluatorImpl::Pass2Recurse(
 					itOrderEN != oSignatureNode->aInputNodes.end();
 					itOrderEN++, itOrderCN++
 				) {
-					assignment_t eAssignment = GetAssignment((*itOrderEN)->dwNodeId, (*itOrderCN)->dwNodeId);
+					assignment_t eAssignment = oMatrix->GetAssignment((*itOrderEN)->dwNodeId, (*itOrderCN)->dwNodeId);
 					if (!(eAssignment == ASSIGNMENT_VALID || eAssignment == ASSIGNMENT_UNDEFINED)) {
 						goto _invalid;
 					}
@@ -280,7 +281,7 @@ bool SignatureEvaluatorImpl::Pass2Recurse(
 			} else {
 				for (itEN = oSignatureNode->aInputNodesUnique.begin(); itEN != oSignatureNode->aInputNodesUnique.end(); itEN++) {
 					for (itCN = oCodeNode->aInputNodesUnique.begin(); itCN != oCodeNode->aInputNodesUnique.end(); itCN++) {
-						assignment_t eAssignment = GetAssignment(itEN->first, itCN->first);
+						assignment_t eAssignment = oMatrix->GetAssignment(itEN->first, itCN->first);
 						if (eAssignment == ASSIGNMENT_VALID || eAssignment == ASSIGNMENT_UNDEFINED) {
 							break;
 						}
@@ -303,12 +304,12 @@ bool SignatureEvaluatorImpl::Pass2Recurse(
 
 		// only explore if the nodes are candidates for matching and the
 		// column has not been assigned yet.
-		sparse_matrix_iterator_t it = oFlagged->FirstCandidate(oSignatureNode->dwNodeId);
+		sparse_matrix_iterator_t it = oMatrix->FirstCandidate(oSignatureNode->dwNodeId);
 		if (it.dwCodeNodeId == 0xffffffff) {
 			/* this node has no candidate */
 			return false;
 		}
-		if (oFlagged->NextCandidate(it).dwCodeNodeId == 0xffffffff) {
+		if (oMatrix->NextCandidate(it).dwCodeNodeId == 0xffffffff) {
 			/*
 			 * single candidate, may not need to push oSparseMatrix and prune
 			 * thus, we differentiate between the two
@@ -334,7 +335,7 @@ bool SignatureEvaluatorImpl::Pass2Recurse(
 				 * Opaque signature node type has just been assigned,
 				 * below we invalidate all candidates for the same opaque type ref but a different type
 				 */
-				PushFlagged();
+				PushMatrix();
 				int dwOpaqueRefId = oSignatureNode->toOpaque()->dwOpaqueRefId;
 				node_type_spec_t oSpec = (*oOpaqueAssignment)[dwOpaqueRefId];
 				std::multimap<int, unsigned int>::iterator itOpaque;
@@ -344,16 +345,16 @@ bool SignatureEvaluatorImpl::Pass2Recurse(
 					itOpaque != aOpaqueIdToNode.end() && itOpaque->first == dwOpaqueRefId;
 					itOpaque++
 				) {
-					sparse_matrix_iterator_t itInner = oFlagged->FirstCandidate(itOpaque->second);
+					sparse_matrix_iterator_t itInner = oMatrix->FirstCandidate(itOpaque->second);
 					while (itInner.dwCodeNodeId != 0xffffffff) {
 						if (!oSpec.Matches(oCodeGraph->oGraph->FindNode(itInner.dwCodeNodeId))) {
-							Assign(
+							oMatrix->Assign(
 								itOpaque->second,
 								itInner.dwCodeNodeId,
 								ASSIGNMENT_INVALID
 							);
 						}
-						itInner = oFlagged->NextCandidate(itInner);
+						itInner = oMatrix->NextCandidate(itInner);
 					}
 				}
 
@@ -367,11 +368,11 @@ bool SignatureEvaluatorImpl::Pass2Recurse(
 					}
 					oFlagMap->Unassign(it.dwCodeNodeId);
 				}
-				PopFlagged();
+				PopMatrix();
 				oOpaqueAssignment->Unassign(oSignatureNode);
 				return false;
 			} else {
-				Assign(oSignatureNode->dwNodeId, it.dwCodeNodeId, ASSIGNMENT_VALID);
+				oMatrix->Assign(oSignatureNode->dwNodeId, it.dwCodeNodeId, ASSIGNMENT_VALID);
 				oFlagMap->Assign(it.dwCodeNodeId);
 				DFGraphImpl::const_iterator itEP(itE);
 				itEP++;
@@ -379,11 +380,10 @@ bool SignatureEvaluatorImpl::Pass2Recurse(
 					return true;
 				}
 				oFlagMap->Unassign(it.dwCodeNodeId);
-				Assign(oSignatureNode->dwNodeId, it.dwCodeNodeId, ASSIGNMENT_UNDEFINED);
+				oMatrix->Assign(oSignatureNode->dwNodeId, it.dwCodeNodeId, ASSIGNMENT_UNDEFINED);
 				return false;
 			}
 		} else {
-			SparseMatrix oCurrentLevel = oFlagged;
 			while (it.dwCodeNodeId != 0xffffffff) { /* iterate candidates */
 				/* unassigned nodes only */
 				if (!oFlagMap->IsAssigned(it.dwCodeNodeId)) {
@@ -405,15 +405,15 @@ bool SignatureEvaluatorImpl::Pass2Recurse(
 					}
 
 					/* unflag all possible assignments, except current candidate */
-					PushFlagged();
-					sparse_matrix_iterator_t itInner = oFlagged->FirstCandidate(oSignatureNode->dwNodeId);
+					PushMatrix();
+					sparse_matrix_iterator_t itInner = oMatrix->FirstCandidate(oSignatureNode->dwNodeId);
 					while (itInner.dwCodeNodeId != 0xffffffff) {
-						Assign(
+						oMatrix->Assign(
 							oSignatureNode->dwNodeId,
 							itInner.dwCodeNodeId,
 							it.dwCodeNodeId == itInner.dwCodeNodeId ? ASSIGNMENT_VALID : ASSIGNMENT_INVALID
 						);
-						itInner = oFlagged->NextCandidate(itInner);
+						itInner = oMatrix->NextCandidate(itInner);
 					}
 
 					if (eAssignStatus == OPAQUE_NODE_ASSIGN_OK) {
@@ -430,16 +430,16 @@ bool SignatureEvaluatorImpl::Pass2Recurse(
 							itOpaque != aOpaqueIdToNode.end() && itOpaque->first == dwOpaqueRefId;
 							itOpaque++
 						) {
-							sparse_matrix_iterator_t itInner = oFlagged->FirstCandidate(itOpaque->second);
+							sparse_matrix_iterator_t itInner = oMatrix->FirstCandidate(itOpaque->second);
 							while (itInner.dwCodeNodeId != 0xffffffff) {
 								if(!oSpec.Matches(oCodeGraph->oGraph->FindNode(itInner.dwCodeNodeId))) {
-									Assign(
+									oMatrix->Assign(
 										itOpaque->second,
 										itInner.dwCodeNodeId,
 										ASSIGNMENT_INVALID
 									);
 								}
-								itInner = oFlagged->NextCandidate(itInner);
+								itInner = oMatrix->NextCandidate(itInner);
 							}
 						}
 					}
@@ -453,13 +453,13 @@ bool SignatureEvaluatorImpl::Pass2Recurse(
 						}
 						oFlagMap->Unassign(it.dwCodeNodeId);
 					}
-					PopFlagged();
+					PopMatrix();
 					if (eAssignStatus == OPAQUE_NODE_ASSIGN_OK) {
 						oOpaqueAssignment->Unassign(oSignatureNode);
 					}
 				}
 _continue:
-				it = oCurrentLevel->NextCandidate(it);
+				it = oMatrix->NextCandidate(it);
 
 				if ((GetTickCount() - dwStartTime) > dwMaxEvaluationTime) {
 					return false;
@@ -480,7 +480,7 @@ bool SignatureEvaluatorImpl::Evaluate(AbstractEvaluationResult *lpOutput) {
 	dwStartTime = GetTickCount();
 	for (itSig = oSignatureDefinition->begin(); itSig != oSignatureDefinition->end(); itSig++) {
 		oSignatureGraph = (*itSig)->toGeneric(); // point oSignatureGraph to the current variant
-		oFlagged = SparseMatrix::create();
+		oMatrix = SparseMatrix::create();
 		oMapping = AssignmentMap::create();
 		oOpaqueAssignment = OpaqueAssignment::create(oSignatureGraph->toSignatureGraph()->dwNumOpaqueRefs);
 		aStack.clear();
@@ -496,7 +496,6 @@ bool SignatureEvaluatorImpl::Evaluate(AbstractEvaluationResult *lpOutput) {
 					aOpaqueIdToNode.insert(std::pair<int, unsigned int>(dwOpaqueRef, itEx->second->dwNodeId));
 				}
 			}
-
 			if (itEx->second->aOutputNodes.begin() != itEx->second->aOutputNodes.end()) {
 				// this node has output nodes -> will be covered by recursive traversal of child
 				continue;
@@ -520,7 +519,7 @@ bool SignatureEvaluatorImpl::Evaluate(AbstractEvaluationResult *lpOutput) {
 			}
 		}
 
-		oFlagged->CleanInvalid();
+		oMatrix->CleanInvalid();
 		if (!PruneFlagged()) {
 			goto _next;
 		}
@@ -574,7 +573,7 @@ _time_exceeded:
 	/* unref everything */
 	oSignatureGraph = nullptr;
 	oMapping = nullptr;
-	oFlagged = nullptr;
+	oMatrix = nullptr;
 	aStack.clear();
 	aOpaqueIdToNode.clear();
 

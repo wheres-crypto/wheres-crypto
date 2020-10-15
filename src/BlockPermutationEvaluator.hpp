@@ -48,7 +48,7 @@ public:
 	bool Evaluate(AbstractEvaluationResult *lpOutput);
 
 private:
-	void DepthFirstSearch(std::list<NodeTriplet> *lpOutput, DFGNode oNode1);
+	void BreadthFirstSearch(std::list<NodeTriplet> *lpOutput, DFGNode oNode1);
 	bool BFSMapPath(BFSPath oPath, DFGNode oSource, DFGNode oTarget);
 	void SpecString(std::string *lpOutput, unsigned int *lpConstant, DFGNode oLoad);
 	SparseMatrix oEvalCache; // borrowed from SignatureEvaluator, used to signifying node compatibility

@@ -140,27 +140,27 @@ typedef rfc_ptr<FlagMapImpl> FlagMap;
 class FlagMapImpl : public ReferenceCounted, public std::unordered_map<unsigned int, unsigned long long> {
 public:
 	inline FlagMapImpl() { }
-	inline void Assign(unsigned int dwSignatureNodeId) {
-		unsigned int dwIndex = dwSignatureNodeId >> 5;
+	inline void Assign(unsigned int dwCodeNodeId) {
+		unsigned int dwIndex = dwCodeNodeId >> 5;
 		iterator it = find(dwIndex);
 		if (it != end()) {
-			it->second |= 1ULL << (dwSignatureNodeId & 0x3f);
+			it->second |= 1ULL << (dwCodeNodeId & 0x3f);
 		} else {
-			insert(std::pair<unsigned int, unsigned long long>(dwIndex, 1 << (dwSignatureNodeId & 0x3f)));
+			insert(std::pair<unsigned int, unsigned long long>(dwIndex, 1 << (dwCodeNodeId & 0x3f)));
 		}
 	}
-	inline void Unassign(unsigned int dwSignatureNodeId) {
-		unsigned int dwIndex = dwSignatureNodeId >> 5;
+	inline void Unassign(unsigned int dwCodeNodeId) {
+		unsigned int dwIndex = dwCodeNodeId >> 5;
 		iterator it = find(dwIndex);
 		if (it != end()) {
-			it->second &= ~(1 << (dwSignatureNodeId & 0x3f));
+			it->second &= ~(1 << (dwCodeNodeId & 0x3f));
 		}
 	}
-	inline bool IsAssigned(unsigned int dwSignatureNodeId) {
-		unsigned int dwIndex = dwSignatureNodeId >> 5;
+	inline bool IsAssigned(unsigned int dwCodeNodeId) {
+		unsigned int dwIndex = dwCodeNodeId >> 5;
 		iterator it = find(dwIndex);
 		if (it != end()) {
-			return it->second & (1 << dwSignatureNodeId & 0x3f);
+			return it->second & (1 << dwCodeNodeId & 0x3f);
 		} else {
 			return false;
 		}
@@ -219,22 +219,15 @@ public:
 
 	SignatureDefinition oSignatureDefinition;
 	Broker oSignatureGraph;
-	SparseMatrix oFlagged;
+	SparseMatrix oMatrix;
 	std::multimap<int, unsigned int> aOpaqueIdToNode;
 	OpaqueAssignment oOpaqueAssignment;
 	AssignmentMap oMapping;
 	std::list<SparseMatrix> aStack;
 	unsigned int dwStartTime;
 
-	inline assignment_t GetAssignment(unsigned int dwSignatureNodeId, unsigned int dwCodeNodeId) const {
-		return oFlagged->GetAssignment(dwSignatureNodeId, dwCodeNodeId);
-	}
-	inline void Assign(unsigned int dwSignatureNodeId, unsigned int dwCodeNodeId, assignment_t eType, bool bKeepInvalid = false) {
-		return oFlagged->Assign(dwSignatureNodeId, dwCodeNodeId, eType, bKeepInvalid);
-	}
-
-	void PushFlagged();
-	void PopFlagged();
+	void PushMatrix();
+	void PopMatrix();
 	void ClearFlagged();
 
 	bool Evaluate(AbstractEvaluationResult *lpOutput);
