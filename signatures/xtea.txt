@@ -1,0 +1,30 @@
+IDENTIFIER XTEA
+
+VARIANT encrypt
+
+v1:OPAQUE;
+v0:OPAQUE;
+
+v0_p:v0+XOR((XOR((v1 << 4),(v1 >> 5))+v1),OPAQUE);
+v1_p:v1+XOR((XOR((v0_p << 4),(v0_p >> 5))+v0_p),OPAQUE);
+v0_pp:v0_p+XOR((XOR((v1_p << 4),(v1_p >> 5))+v1_p),OPAQUE);
+v1_pp:v1_p+XOR((XOR((v0_pp << 4),(v0_pp >> 5))+v0_pp),OPAQUE);
+v0_ppp:v0_pp+XOR((XOR((v1_pp << 4),(v1_pp >> 5))+v1_pp),OPAQUE);
+v1_ppp:v1_pp+XOR((XOR((v0_ppp << 4),(v0_ppp >> 5))+v0_ppp),OPAQUE);
+v0_pppp:v0_ppp+XOR((XOR((v1_ppp << 4),(v1_ppp >> 5))+v1_ppp),OPAQUE);
+v1_pppp:v1_ppp+XOR((XOR((v0_pppp << 4),(v0_pppp >> 5))+v0_pppp),OPAQUE);
+
+VARIANT decrypt
+
+TRANSIENT key:OPAQUE;
+TRANSIENT v0:OPAQUE;
+TRANSIENT v1:OPAQUE;
+
+v1_p:v1+MULT(XOR(OPAQUE,(XOR((v0 << 4),(v0 >> 5))+v0)),-1);
+v0_p:v0+MULT(XOR(OPAQUE,(XOR((v1_p << 4),(v1_p >> 5))+v1_p)),-1);
+v1_pp:v1_p+MULT(XOR(OPAQUE,(XOR((v0_p << 4),(v0_p >> 5))+v0_p)),-1);
+v0_pp:v0_p+MULT(XOR(OPAQUE,(XOR((v1_pp << 4),(v1_pp >> 5))+v1_pp)),-1);
+v1_ppp:v1_pp+MULT(XOR(OPAQUE,(XOR((v0_pp << 4),(v0_pp >> 5))+v0_pp)),-1);
+v0_ppp:v0_pp+MULT(XOR(OPAQUE,(XOR((v1_ppp << 4),(v1_ppp >> 5))+v1_ppp)),-1);
+v1_pppp:v1_ppp+MULT(XOR(OPAQUE,(XOR((v0_ppp << 4),(v0_ppp >> 5))+v0_ppp)),-1);
+v0_pppp:v0_ppp+MULT(XOR(OPAQUE,(XOR((v1_pppp << 4),(v1_pppp >> 5))+v1_pppp)),-1);
